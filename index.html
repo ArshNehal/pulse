@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="./frequence.png" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse - Social</title>
+  <style>
+    :root {
+      --bg: #04060f;
+      --text: #eef2ff;
+      --muted: #a4b0d0;
+      --accent: #7c8cff;
+      --border: rgba(255,255,255,0.14);
+      --danger: #ff6b7a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+    html, body { height: 100%; }
+    body { background: var(--bg); color: var(--text); }
+    
+    button, input, textarea, select { font: inherit; }
+    .hidden { display: none !important; }
+    .icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .logo { width: 40px; height: 40px; }
+
+    /* Auth */
+    .auth-shell { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+    .auth-card { width: min(500px, 95%); max-width: 420px; padding: 40px 28px; border: 1px solid var(--border); border-radius: 16px; }
+    .auth-header { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+    .auth-copy { color: var(--muted); margin-bottom: 20px; font-size: 14px; }
+    .auth-title { font-size: 24px; margin-bottom: 10px; font-weight: 700; }
+    .auth-error { display: none; padding: 12px; border: 1px solid var(--danger); border-radius: 8px; background: rgba(255,107,122,0.1); color: #ffb1ba; margin-bottom: 15px; font-size: 14px; }
+    .auth-error.visible { display: block; }
+    
+    .form-grid { display: grid; gap: 12px; margin: 20px 0; }
+    .form-grid input { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); outline: none; }
+    .form-grid input:focus { border-color: var(--accent); }
+    
+    .primary-btn { background: var(--accent); color: #04060f; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 15px; }
+    .primary-btn:hover { opacity: 0.9; }
+    .ghost-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .ghost-btn:hover { background: rgba(255,255,255,0.05); }
+    
+    .auth-footer { text-align: center; margin-top: 15px; color: var(--muted); font-size: 14px; }
+    .auth-footer span { color: var(--accent); cursor: pointer; font-weight: 600; }
+    .auth-footer span:hover { text-decoration: underline; }
+
+    /* App */
+    .app-shell { width: 100vw; min-height: 100vh; display: grid; grid-template-columns: 220px 1fr; }
+    .sidebar { background: rgba(255,255,255,0.02); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+    .sidebar-brand { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; }
+    .sidebar-logo { width: 30px; height: 30px; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; }
+    .nav-btn { background: transparent; border: none; color: var(--muted); text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+    .nav-btn.active { background: rgba(255,255,255,0.08); color: var(--text); }
+    .nav-btn:hover { background: rgba(255,255,255,0.05); }
+
+    .content-panel { display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { display: flex; gap: 16px; padding: 15px 20px; border-bottom: 1px solid var(--border); align-items: center; }
+    .brand { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+    .brand-logo { width: 30px; height: 30px; }
+    
+    .search-wrap { position: relative; flex: 1; max-width: 300px; }
+    .search-wrap input { width: 100%; padding: 8px 12px 8px 32px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); outline: none; font-size: 14px; }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    
+    .search-results { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(5,7,11,0.95); border: 1px solid var(--border); border-radius: 8px; max-height: 300px; overflow-y: auto; z-index: 10; }
+    .search-card { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .search-card:last-child { border-bottom: none; }
+    .search-card:hover { background: rgba(255,255,255,0.05); }
+    .search-card .meta strong { font-size: 13px; }
+    .search-card .meta span { font-size: 12px; color: var(--muted); }
+
+    .hero { padding: 20px; border-bottom: 1px solid var(--border); display: flex; gap: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .hero-main { display: flex; gap: 12px; align-items: center; min-width: 220px; }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+    .hero h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .hero p { color: var(--muted); font-size: 13px; margin: 0; }
+    .stats { display: flex; gap: 16px; }
+    .stats-item { display: flex; flex-direction: column; align-items: center; min-width: 80px; padding: 12px 14px; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; background: rgba(255,255,255,0.02); }
+    .stats-item strong { color: var(--text); font-size: 18px; line-height: 1; margin-bottom: 4px; }
+    .stats-item span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .composer { padding: 15px 20px; border-bottom: 1px solid var(--border); }
+    .composer textarea { width: 100%; min-height: 80px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 12px; resize: none; outline: none; font-size: 14px; }
+    .composer textarea:focus { border-color: var(--accent); }
+    
+    .composer-tools { display: flex; gap: 10px; margin-top: 10px; justify-content: space-between; align-items: center; }
+    .composer-tools label { display: flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 13px; }
+    .type-switcher { display: flex; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,0.02); }
+    .type-switcher button { flex: 1; background: transparent; border: none; color: var(--muted); padding: 8px 12px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .type-switcher button.active { background: rgba(124,140,255,0.15); color: var(--text); }
+
+    .feed { padding: 15px 20px; flex: 1; overflow-y: auto; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 12px; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .card-user { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+    .card-user img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .card-user strong { font-size: 14px; display: block; }
+    .card-user span { color: var(--muted); font-size: 12px; }
+    .badge { display: inline-flex; gap: 4px; background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.2); padding: 4px 8px; border-radius: 999px; font-size: 12px; color: #5eead4; }
+    
+    .post-text { margin: 10px 0; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+    .media { margin: 10px 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .media img, .media video { width: 100%; max-height: 300px; object-fit: cover; display: block; }
+    
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .action-btn { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 6px 10px; border-radius: 999px; cursor: pointer; font-size: 13px; }
+    .action-btn:hover { background: rgba(255,255,255,0.05); }
+    .action-btn.active { color: var(--text); border-color: var(--accent); background: rgba(124,140,255,0.1); }
+    .action-btn.danger { color: var(--danger); }
+    .action-btn svg { width: 16px; height: 16px; }
+
+    .comment-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .comment-form { display: flex; gap: 8px; margin-bottom: 10px; }
+    .comment-form input { flex: 1; background: transparent; border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; }
+    .comment-form input:focus { border-color: var(--accent); }
+    .comment-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+    .comment-row img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .comment-bubble { background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; flex: 1; cursor: pointer; font-size: 13px; }
+    .comment-bubble:hover { background: rgba(255,255,255,0.08); }
+    .comment-bubble strong { display: block; font-size: 12px; margin-bottom: 3px; }
+
+    .settings-panel { padding: 20px; overflow-y: auto; }
+    .settings-section { margin-bottom: 20px; }
+    .settings-section h4 { margin-bottom: 10px; font-size: 14px; font-weight: 600; }
+    .settings-option { display: flex; gap: 8px; flex-wrap: wrap; }
+    .settings-option button { border: 1px solid var(--border); background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+    .settings-option button:hover { background: rgba(255,255,255,0.05); }
+    .settings-option button.active { background: rgba(124,140,255,0.15); color: var(--text); border-color: var(--accent); }
+
+    .profile-edit-grid { display: grid; gap: 12px; }
+    .profile-edit-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 13px; }
+    .profile-edit-grid input, .profile-edit-grid textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text); outline: none; font-size: 13px; }
+    .profile-edit-grid input:focus, .profile-edit-grid textarea:focus { border-color: var(--accent); }
+    #settings-pfp-preview { width: 80px; height: 80px; border-radius: 8px; border: 1px solid var(--border); object-fit: cover; }
+
+    .logout-btn { width: 100%; background: var(--danger); border: 1px solid transparent; color: #fff; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px; transition: background 0.2s ease; }
+    .logout-btn:hover { background: #e24453; }
+
+    .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+    .reel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .reel-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .reel-card img, .reel-card video { width: 100%; aspect-ratio: 9/16; object-fit: cover; display: block; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: grid; place-items: center; z-index: 50; }
+    .modal { width: min(90%, 500px); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .modal-head h3 { font-size: 16px; }
+    .profile-summary { display: flex; gap: 12px; margin-bottom: 15px; align-items: center; }
+    .profile-summary img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 15px; }
+
+    @media (max-width: 900px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { flex-direction: row; min-height: auto; gap: 10px; padding: 12px; align-items: center; }
+      .sidebar-brand { display: none; }
+      .sidebar-nav { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 8px; overflow-x: auto; }
+      .sidebar-nav::-webkit-scrollbar { display: none; }
+      .nav-btn { white-space: normal; padding: 8px 10px; font-size: 12px; flex: 1 1 auto; justify-content: center; }
+      .topbar { flex-direction: column; align-items: stretch; gap: 12px; }
+      .search-wrap { max-width: none; order: 2; width: 100%; }
+      .search-wrap input { width: 100%; }
+      .hero { flex-direction: column; align-items: stretch; }
+      .hero-main { width: 100%; }
+      .stats { width: 100%; justify-content: space-between; }
+      .stats-item { flex: 1; }
+      .composer-tools { flex-direction: column; align-items: stretch; }
+      .composer-tools label, .composer-tools .type-switcher, .composer-tools button { width: 100%; }
+      .reel-grid { grid-template-columns: 1fr; }
+      .comment-form { flex-direction: column; }
+      .comment-form input, .comment-form button { width: 100%; }
+    }
+
+    @media (max-width: 600px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { flex-direction: row; padding: 8px; gap: 5px; }
+      .sidebar-brand { display: none; }
+      .sidebar-nav { gap: 4px; }
+      .nav-btn { padding: 6px 8px; font-size: 11px; }
+      .topbar { padding: 10px; flex-direction: column; align-items: stretch; gap: 10px; }
+      .search-wrap { max-width: 100%; width: 100%; order: 2; }
+      .composer { padding: 10px; }
+      .composer textarea { min-height: 80px; font-size: 13px; }
+      .hero { padding: 12px; }
+      .hero-main { gap: 10px; }
+      .stats { width: 100%; justify-content: space-between; gap: 8px; }
+      .stats-item { padding: 10px; }
+      .card { padding: 12px; margin-bottom: 10px; }
+      .avatar { width: 40px; height: 40px; }
+      .actions { flex-direction: column; }
+      .action-btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div id="screen-login" class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img class="logo" src="./frequence.png" alt="Pulse Logo" />
+        <div>
+          <div style="font-weight: 700; font-size: 12px; text-transform: uppercase;">Pulse</div>
+        </div>
+      </div>
+      <h2 class="auth-title">Welcome back</h2>
+      <p class="auth-copy">Sign in to your account</p>
+      <div id="login-error" class="auth-error"></div>
+      <div class="form-grid">
+        <input id="login-user" placeholder="Username" />
+        <input id="login-pass" type="password" placeholder="Password" />
+      </div>
+      <button class="primary-btn" onclick="handleLogin()">Sign in</button>
+      <div class="auth-footer">
+        <span onclick="toggleAuthScreens('register')">Create account</span> or sign in
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-register" class="auth-shell hidden">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img class="logo" src="./frequence.png" alt="Pulse Logo" />
+        <div>
+          <div style="font-weight: 700; font-size: 12px; text-transform: uppercase;">Pulse</div>
+        </div>
+      </div>
+      <h2 class="auth-title">Join Pulse</h2>
+      <p class="auth-copy">Create your account</p>
+      <div id="register-error" class="auth-error"></div>
+      <div class="form-grid">
+        <input id="reg-user" placeholder="Username" />
+        <input id="reg-name" placeholder="Display name" />
+        <input id="reg-pass" type="password" placeholder="Password" />
+      </div>
+      <button class="primary-btn" onclick="handleRegister()">Create account</button>
+      <div class="auth-footer">
+        <span onclick="toggleAuthScreens('login')">Already have an account?</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-app" class="app-shell hidden">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <img class="sidebar-logo" src="./frequence.png" alt="Pulse Logo" />
+          <div>Pulse</div>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-btn active" id="tab-home" onclick="switchView('home')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-10.5z"></path></svg>
+            Home
+          </button>
+          <button class="nav-btn" id="tab-reels" onclick="switchView('reels')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M5 4.5h14A2.5 2.5 0 0 1 21.5 7v10A2.5 2.5 0 0 1 19 19.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5zm8 7.5-5 3.5V8.5l5 3.5z"></path></svg>
+            Reels
+          </button>
+          <button class="nav-btn" id="tab-saved" onclick="switchView('saved')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+            Saved
+          </button>
+          <button class="nav-btn" id="tab-settings" onclick="switchView('settings')">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19.43 12.98a7.5 7.5 0 0 0 0-1.96l2.11-1.65a.5.5 0 0 0 .12-.65l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.72 7.72 0 0 0-1.7-1l-.38-2.65a.5.5 0 0 0-.5-.42h-4a.5.5 0 0 0-.5.42l-.38 2.65a7.72 7.72 0 0 0-1.7 1l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.65l2.11 1.65a7.5 7.5 0 0 0 0 1.96l-2.11 1.65a.5.5 0 0 0-.12.65l2 3.46a.5.5 0 0 0 .61.22l2.49-1a7.72 7.72 0 0 0 1.7 1l.38 2.65a.5.5 0 0 0 .5.42h4a.5.5 0 0 0 .5-.42l.38-2.65a7.72 7.72 0 0 0 1.7-1l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.65l-2.11-1.65zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" fill="currentColor"></path></svg>
+            Settings
+          </button>
+        </nav>
+      </div>
+    </aside>
+
+    <main class="content-panel">
+      <header class="topbar">
+        <div class="search-wrap">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+          <input id="search-input" placeholder="Search..." oninput="renderSearchResults()" />
+          <div id="search-results" class="search-results hidden"></div>
+        </div>
+      </header>
+
+      <section id="settings-page" class="settings-panel hidden">
+        <div class="settings-section">
+          <h4>Edit Profile</h4>
+          <div class="profile-edit-grid">
+            <label>
+              Display name
+              <input id="settings-display-name" type="text" />
+            </label>
+            <label>
+              Bio
+              <textarea id="settings-bio" rows="3"></textarea>
+            </label>
+            <label>
+              Profile photo
+              <input id="settings-pfp-upload" type="file" accept="image/*" />
+            </label>
+            <img id="settings-pfp-preview" src="" alt="Preview" class="hidden" />
+            <button class="primary-btn" onclick="saveProfileEdits()">Save</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h4>Theme</h4>
+          <div class="settings-option">
+            <button onclick="setUserSetting('accent', 'blue')">Blue</button>
+            <button onclick="setUserSetting('accent', 'teal')">Teal</button>
+            <button onclick="setUserSetting('accent', 'sunset')">Sunset</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h4>Account</h4>
+          <button class="logout-btn" onclick="handleLogout()">Log out</button>
+        </div>
+      </section>
+
+      <section class="hero">
+        <div class="hero-main">
+          <img id="prof-pfp" class="avatar" src="" alt="Profile" />
+          <div>
+            <h1 id="prof-display-name">Your name</h1>
+            <p id="prof-handle">@username</p>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stats-item"><strong id="count-posts">0</strong><span>Posts</span></div>
+          <div class="stats-item"><strong id="count-followers">0</strong><span>Followers</span></div>
+          <div class="stats-item"><strong id="count-following">0</strong><span>Following</span></div>
+        </div>
+      </section>
+
+      <section class="composer">
+        <textarea id="post-text" placeholder="Share something..."></textarea>
+        <div id="preview" class="preview hidden">
+          <img id="img-preview" src="" alt="Preview" class="hidden" />
+          <video id="video-preview" controls class="hidden"></video>
+        </div>
+        <div class="composer-tools">
+          <label for="media-upload">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 12h8M12 8v8"></path></svg>
+            <span id="media-label">Photo</span>
+          </label>
+          <input id="media-upload" type="file" accept="image/*" style="display:none" />
+          <div class="type-switcher">
+            <button class="active" onclick="switchPostType('post')">Post</button>
+            <button onclick="switchPostType('reel')">Reel</button>
+          </div>
+          <button class="primary-btn" onclick="publishContent()">Post</button>
+        </div>
+        <input id="post-type" type="hidden" value="post" />
+      </section>
+
+      <section id="feed-target" class="feed"></section>
+    </main>
+  </div>
+
+  <div id="profile-modal" class="modal-backdrop hidden" onclick="closeProfileModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Profile</h3>
+        <button class="ghost-btn" onclick="closeProfileModal()">Close</button>
+      </div>
+      <div id="profile-modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    let db, currentUserSession = null, currentView = 'home', currentProfile = null;
+    let postMediaBufferBase64 = '', profilePictureBufferBase64 = '';
+    const DB_NAME = 'PulseSocialDB';
+    const defaultAvatarDataUrl = 'data:image/svg+xml;charset=utf-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"%3E%3Crect width="120" height="120" rx="32" fill="%230f131b"/%3E%3Ccircle cx="60" cy="45" r="22" fill="%238d95a5"/%3E%3Cpath d="M30 100c6-22 21-34 30-34s24 12 30 34" fill="%237c8cff"/%3E%3Ccircle cx="84" cy="32" r="12" fill="%235eead4"/%3E%3C/svg%3E';
+
+    async function hashPassword(password) {
+      if (!window.crypto || !window.crypto.subtle) return password;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUserSettings();
+
+      document.getElementById('media-upload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          postMediaBufferBase64 = ev.target.result;
+          const preview = document.getElementById('preview');
+          const img = document.getElementById('img-preview');
+          const vid = document.getElementById('video-preview');
+          if (postMediaBufferBase64.startsWith('data:video')) {
+            img.classList.add('hidden');
+            vid.classList.remove('hidden');
+            vid.src = postMediaBufferBase64;
+          } else {
+            vid.classList.add('hidden');
+            img.classList.remove('hidden');
+            img.src = postMediaBufferBase64;
+          }
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-wrap')) {
+          document.getElementById('search-results').classList.add('hidden');
+        }
+      });
+
+      const request = indexedDB.open(DB_NAME);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'username' });
+        if (!db.objectStoreNames.contains('posts')) db.createObjectStore('posts', { keyPath: 'id' });
+      };
+      request.onsuccess = (e) => {
+        db = e.target.result;
+        checkActiveSession();
+      };
+      request.onerror = (e) => {
+        console.error('IndexedDB failed to open', e.target.error);
+      };
+
+      document.getElementById('settings-pfp-upload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          profilePictureBufferBase64 = ev.target.result;
+          const preview = document.getElementById('settings-pfp-preview');
+          preview.src = profilePictureBufferBase64;
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    function toggleAuthScreens(target) {
+      clearAuthErrors();
+      if (target === 'register') {
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-register').classList.remove('hidden');
+      } else {
+        document.getElementById('screen-register').classList.add('hidden');
+        document.getElementById('screen-login').classList.remove('hidden');
+      }
+    }
+
+    function clearAuthErrors() {
+      document.getElementById('login-error').classList.remove('visible');
+      document.getElementById('register-error').classList.remove('visible');
+    }
+
+    function loadUserSettings() {
+      const stored = JSON.parse(localStorage.getItem('pulse_settings') || '{}');
+      if (stored.accent) {
+        applyUserSetting('accent', stored.accent);
+      }
+    }
+
+    function applyUserSetting(key, value) {
+      if (key === 'accent') {
+        const accentMap = {
+          blue: '#7c8cff',
+          teal: '#3dd5b8',
+          sunset: '#ff8f7f'
+        };
+        document.documentElement.style.setProperty('--accent', accentMap[value] || value);
+        document.querySelectorAll('.settings-option button').forEach((button) => {
+          button.classList.toggle('active', button.textContent.toLowerCase() === value);
+        });
+      }
+    }
+
+    function resetAuthForms() {
+      document.getElementById('login-user').value = '';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('reg-user').value = '';
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-pass').value = '';
+      clearAuthErrors();
+    }
+
+    async function handleRegister() {
+      const user = document.getElementById('reg-user').value.trim().toLowerCase();
+      const name = document.getElementById('reg-name').value.trim();
+      const pass = document.getElementById('reg-pass').value;
+      const err = document.getElementById('register-error');
+      const passHash = await hashPassword(pass);
+      if (!user || !name || !pass) {
+        err.textContent = 'Fill all fields';
+        err.classList.add('visible');
+        return;
+      }
+      const checkTx = db.transaction(['users'], 'readonly');
+      const store = checkTx.objectStore('users');
+      store.get(user).onsuccess = (e) => {
+        if (e.target.result) {
+          err.textContent = 'Username taken';
+          err.classList.add('visible');
+          return;
+        }
+        const newUser = { username: user, displayName: name, password: passHash, bio: '', pfp: defaultAvatarDataUrl, followers: [], following: [] };
+        const writeTx = db.transaction(['users'], 'readwrite');
+        writeTx.objectStore('users').add(newUser);
+        writeTx.oncomplete = () => {
+          currentUserSession = newUser;
+          localStorage.setItem('pulse_session_user', user);
+          bootApp();
+        };
+        writeTx.onerror = () => {
+          err.textContent = 'Could not create account';
+          err.classList.add('visible');
+        };
+      };
+      checkTx.onerror = () => {
+        err.textContent = 'Could not verify username';
+        err.classList.add('visible');
+      };
+    }
+
+    async function handleLogin() {
+      const user = document.getElementById('login-user').value.trim().toLowerCase();
+      const pass = document.getElementById('login-pass').value;
+      const err = document.getElementById('login-error');
+      const passHash = await hashPassword(pass);
+      if (!user || !pass) {
+        err.textContent = 'Fill all fields';
+        err.classList.add('visible');
+        return;
+      }
+      const tx = db.transaction(['users'], 'readonly');
+      tx.objectStore('users').get(user).onsuccess = (e) => {
+        const userObj = e.target.result;
+        if (userObj && userObj.password === passHash) {
+          clearAuthErrors();
+          currentUserSession = userObj;
+          localStorage.setItem('pulse_session_user', user);
+          bootApp();
+        } else {
+          err.textContent = 'Invalid credentials';
+          err.classList.add('visible');
+        }
+      };
+    }
+
+    function checkActiveSession() {
+      const cachedUser = localStorage.getItem('pulse_session_user');
+      if (!cachedUser) return;
+      const tx = db.transaction(['users'], 'readonly');
+      tx.objectStore('users').get(cachedUser).onsuccess = (e) => {
+        if (e.target.result) {
+          currentUserSession = e.target.result;
+          bootApp();
+        } else {
+          clearSession();
+        }
+      };
+    }
+
+    function clearSession() {
+      localStorage.removeItem('pulse_session_user');
+      currentUserSession = null;
+      currentView = 'home';
+      document.getElementById('screen-app').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+      resetAuthForms();
+    }
+
+    function handleLogout() {
+      if (!confirm('Are you sure you want to log out?')) return;
+      clearSession();
+    }
+
+    function bootApp() {
+      currentView = 'home';
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-register').classList.add('hidden');
+      document.getElementById('screen-app').classList.remove('hidden');
+      resetAuthForms();
+      updateProfileUI();
+      switchView('home');
+    }
+
+    function updateProfileUI() {
+      if (!currentUserSession) return;
+      document.getElementById('prof-display-name').textContent = currentUserSession.displayName;
+      document.getElementById('prof-handle').textContent = '@' + currentUserSession.username;
+      document.getElementById('prof-pfp').src = currentUserSession.pfp || defaultAvatarDataUrl;
+      document.getElementById('count-followers').textContent = (currentUserSession.followers || []).length;
+      document.getElementById('count-following').textContent = (currentUserSession.following || []).length;
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + view).classList.add('active');
+      document.getElementById('settings-page').classList.toggle('hidden', view !== 'settings');
+      document.getElementById('feed-target').classList.toggle('hidden', view === 'settings');
+      document.querySelector('.hero').classList.toggle('hidden', view !== 'home');
+      document.querySelector('.composer').classList.toggle('hidden', view !== 'home');
+      renderEverything();
+      if (view === 'settings') fillSettingsForm();
+    }
+
+    function fillSettingsForm() {
+      if (!currentUserSession) return;
+      document.getElementById('settings-display-name').value = currentUserSession.displayName || '';
+      document.getElementById('settings-bio').value = currentUserSession.bio || '';
+      profilePictureBufferBase64 = '';
+    }
+
+    function saveProfileEdits() {
+      const displayName = document.getElementById('settings-display-name').value.trim();
+      const bio = document.getElementById('settings-bio').value.trim();
+      if (!displayName) return;
+      const updated = { ...currentUserSession, displayName, bio, pfp: profilePictureBufferBase64 || currentUserSession.pfp };
+      const tx = db.transaction(['users'], 'readwrite');
+      tx.objectStore('users').put(updated);
+      tx.oncomplete = () => {
+        currentUserSession = updated;
+        updateProfileUI();
+        profilePictureBufferBase64 = '';
+        renderEverything();
+      };
+    }
+
+    function setUserSetting(key, value) {
+      const stored = JSON.parse(localStorage.getItem('pulse_settings') || '{}');
+      stored[key] = value;
+      localStorage.setItem('pulse_settings', JSON.stringify(stored));
+      applyUserSetting(key, value);
+    }
+
+    function renderEverything() {
+      if (!db || !currentUserSession) return;
+      const userTx = db.transaction(['users'], 'readonly');
+      userTx.objectStore('users').getAll().onsuccess = (e) => {
+        const userMap = Object.fromEntries(e.target.result.map(u => [u.username, u]));
+        const postTx = db.transaction(['posts'], 'readonly');
+        postTx.objectStore('posts').getAll().onsuccess = (pe) => {
+          const allPosts = pe.target.result.sort((a, b) => b.createdAt - a.createdAt);
+          let posts = allPosts;
+          if (currentView === 'reels') posts = allPosts.filter(p => p.type === 'reel');
+          else if (currentView === 'saved') posts = allPosts.filter(p => (p.savedBy || []).includes(currentUserSession.username));
+          renderFeed(posts, userMap);
+          document.getElementById('count-posts').textContent = allPosts.filter(p => p.author === currentUserSession.username).length;
+        };
+      };
+    }
+
+    function renderFeed(posts, userMap) {
+      const feed = document.getElementById('feed-target');
+      if (!posts.length) {
+        const emptyText = currentView === 'reels'
+          ? 'No reels yet'
+          : currentView === 'saved'
+            ? 'No saved reels or posts yet'
+            : 'No posts yet';
+        feed.innerHTML = `<div class="empty">${emptyText}</div>`;
+        return;
+      }
+      feed.innerHTML = posts.map(post => {
+        const author = userMap[post.author] || { displayName: 'Unknown', username: post.author, pfp: defaultAvatarDataUrl };
+        const liked = (post.likes || []).includes(currentUserSession.username);
+        const saved = (post.savedBy || []).includes(currentUserSession.username);
+        const comments = post.comments || [];
+        return `
+          <div class="card">
+            <div class="card-top">
+              <div class="card-user" onclick="openProfileModal('${author.username}')">
+                <img src="${author.pfp || defaultAvatarDataUrl}" />
+                <div>
+                  <strong>${escape(author.displayName)}</strong>
+                  <span>@${escape(author.username)}</span>
+                </div>
+              </div>
+              <span class="badge">${post.type === 'reel' ? 'Reel' : 'Post'}</span>
+            </div>
+            <div class="post-text">${escape(post.text)}</div>
+            ${post.media ? (post.media.startsWith('data:video') ? `<div class="media"><video controls src="${post.media}"></video></div>` : `<div class="media"><img src="${post.media}" /></div>`) : ''}
+            <div class="actions">
+              <button class="action-btn ${liked ? 'active' : ''}" onclick="toggleLike('${post.id}')">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                ${(post.likes || []).length}
+              </button>
+              <button class="action-btn"><svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${comments.length}</button>
+              <button class="action-btn ${saved ? 'active' : ''}" onclick="toggleSave('${post.id}')"><svg class="icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg></button>
+              ${post.author === currentUserSession.username ? `<button class="action-btn danger" onclick="deletePost('${post.id}')">Delete</button>` : ''}
+            </div>
+            <div class="comment-box">
+              <form onsubmit="addComment(event, '${post.id}')">
+                <div class="comment-form">
+                  <input id="comment-${post.id}" placeholder="Comment..." />
+                  <button class="primary-btn" type="submit">Send</button>
+                </div>
+              </form>
+              ${comments.map(c => {
+                const ca = userMap[c.username] || { displayName: c.username, pfp: defaultAvatarDataUrl };
+                return `
+                  <div class="comment-row">
+                    <img src="${ca.pfp || defaultAvatarDataUrl}" />
+                    <div class="comment-bubble"><strong>${escape(ca.displayName)}</strong><span>${escape(c.text)}</span></div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderSearchResults() {
+      const box = document.getElementById('search-results');
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+      if (!query) {
+        box.classList.add('hidden');
+        return;
+      }
+      const tx = db.transaction(['users', 'posts'], 'readonly');
+      const users = [], posts = [];
+      tx.objectStore('users').getAll().onsuccess = (e) => {
+        users.push(...e.target.result.filter(u => `${u.displayName} ${u.username}`.toLowerCase().includes(query)));
+        tx.objectStore('posts').getAll().onsuccess = (pe) => {
+          posts.push(...pe.target.result.filter(p => (p.text || '').toLowerCase().includes(query)));
+          if (!users.length && !posts.length) {
+            box.innerHTML = '<div class="search-card"><div class="meta"><strong>No results</strong></div></div>';
+          } else {
+            box.innerHTML = [
+              ...users.map(u => `<div class="search-card" onclick="openProfileModal('${u.username}')"><div class="meta"><strong>${escape(u.displayName)}</strong><span>@${escape(u.username)}</span></div></div>`),
+              ...posts.map(p => `<div class="search-card" onclick="openProfileModal('${p.author}')"><div class="meta"><strong>${escape(p.text.slice(0, 40))}</strong><span>${p.type}</span></div></div>`)
+            ].join('');
+          }
+          box.classList.remove('hidden');
+        };
+      };
+    }
+
+    function toggleLike(postId) {
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').get(postId).onsuccess = (e) => {
+        const post = e.target.result;
+        if (!post.likes) post.likes = [];
+        const idx = post.likes.indexOf(currentUserSession.username);
+        if (idx >= 0) post.likes.splice(idx, 1);
+        else post.likes.push(currentUserSession.username);
+        tx.objectStore('posts').put(post);
+      };
+      tx.oncomplete = renderEverything;
+    }
+
+    function toggleSave(postId) {
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').get(postId).onsuccess = (e) => {
+        const post = e.target.result;
+        if (!post.savedBy) post.savedBy = [];
+        const idx = post.savedBy.indexOf(currentUserSession.username);
+        if (idx >= 0) post.savedBy.splice(idx, 1);
+        else post.savedBy.push(currentUserSession.username);
+        tx.objectStore('posts').put(post);
+      };
+      tx.oncomplete = renderEverything;
+    }
+
+    function deletePost(postId) {
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').delete(postId);
+      tx.oncomplete = renderEverything;
+    }
+
+    function addComment(event, postId) {
+      event.preventDefault();
+      const value = document.getElementById('comment-' + postId).value.trim();
+      if (!value) return;
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').get(postId).onsuccess = (e) => {
+        const post = e.target.result;
+        if (!post.comments) post.comments = [];
+        post.comments.push({ username: currentUserSession.username, text: value });
+        tx.objectStore('posts').put(post);
+      };
+      tx.oncomplete = renderEverything;
+    }
+
+    function switchPostType(value) {
+      document.getElementById('post-type').value = value;
+      document.getElementById('media-label').textContent = value === 'reel' ? 'Video' : 'Photo';
+      document.getElementById('media-upload').accept = value === 'reel' ? 'video/*' : 'image/*';
+      document.querySelectorAll('.type-switcher button').forEach(b => b.classList.toggle('active', b.textContent === value.charAt(0).toUpperCase() + value.slice(1)));
+    }
+
+    function publishContent() {
+      const text = document.getElementById('post-text').value.trim();
+      const type = document.getElementById('post-type').value;
+      if (!text && !postMediaBufferBase64) return;
+      const post = {
+        id: Date.now().toString(),
+        author: currentUserSession.username,
+        type,
+        text,
+        media: postMediaBufferBase64,
+        likes: [],
+        comments: [],
+        savedBy: [],
+        createdAt: Date.now()
+      };
+      const tx = db.transaction(['posts'], 'readwrite');
+      tx.objectStore('posts').add(post);
+      tx.oncomplete = () => {
+        document.getElementById('post-text').value = '';
+        document.getElementById('media-upload').value = '';
+        const preview = document.getElementById('preview');
+        const img = document.getElementById('img-preview');
+        const vid = document.getElementById('video-preview');
+        img.src = '';
+        vid.src = '';
+        preview.classList.add('hidden');
+        postMediaBufferBase64 = '';
+        renderEverything();
+      };
+    }
+
+    function openProfileModal(username) {
+      const modal = document.getElementById('profile-modal');
+      modal.classList.remove('hidden');
+      const body = document.getElementById('profile-modal-body');
+      const tx = db.transaction(['users', 'posts'], 'readonly');
+      tx.objectStore('users').get(username).onsuccess = (e) => {
+        const user = e.target.result;
+        currentProfile = user;
+        tx.objectStore('posts').getAll().onsuccess = (pe) => {
+          const posts = pe.target.result.filter(p => p.author === user.username).sort((a, b) => b.createdAt - a.createdAt);
+          const isFollowing = (currentUserSession.following || []).includes(user.username);
+          body.innerHTML = `
+            <div class="profile-summary">
+              <img src="${user.pfp || defaultAvatarDataUrl}" />
+              <div>
+                <h3>${escape(user.displayName)}</h3>
+                <p style="color:var(--muted);">@${escape(user.username)}</p>
+                <p style="margin-top:6px; color:#dfe6f2;">${escape(user.bio || '')}</p>
+              </div>
+            </div>
+            <div class="stats" style="margin-bottom: 15px;">
+              <div><strong>${posts.length}</strong>posts</div>
+              <div><strong>${(user.followers || []).length}</strong>followers</div>
+              <div><strong>${(user.following || []).length}</strong>following</div>
+            </div>
+            <div class="modal-actions">
+              <button class="primary-btn" onclick="toggleFollow('${user.username}')">${isFollowing ? 'Following' : 'Follow'}</button>
+              <button class="ghost-btn" onclick="closeProfileModal()">Close</button>
+            </div>
+            ${posts.length ? posts.map(p => `<div class="card" style="margin-top:12px;">${escape(p.text)}</div>`).join('') : '<div class="empty">No posts</div>'}
+          `;
+        };
+      };
+    }
+
+    function closeProfileModal(event) {
+      if (event && event.target.id !== 'profile-modal') return;
+      document.getElementById('profile-modal').classList.add('hidden');
+      currentProfile = null;
+    }
+
+    function toggleFollow(targetUsername) {
+      if (targetUsername === currentUserSession.username) return;
+      const tx = db.transaction(['users'], 'readwrite');
+      const store = tx.objectStore('users');
+      store.get(currentUserSession.username).onsuccess = (e) => {
+        const me = e.target.result;
+        store.get(targetUsername).onsuccess = (te) => {
+          const targetUser = te.target.result;
+          if (!me.following) me.following = [];
+          if (!targetUser.followers) targetUser.followers = [];
+          const idx = me.following.indexOf(targetUsername);
+          if (idx >= 0) {
+            me.following.splice(idx, 1);
+            targetUser.followers = targetUser.followers.filter(n => n !== currentUserSession.username);
+          } else {
+            if (!me.following.includes(targetUsername)) me.following.push(targetUsername);
+            if (!targetUser.followers.includes(currentUserSession.username)) targetUser.followers.push(currentUserSession.username);
+          }
+          store.put(me);
+          store.put(targetUser);
+          currentUserSession = me;
+          localStorage.setItem('pulse_session_user', me.username);
+        };
+      };
+      tx.oncomplete = () => {
+        updateProfileUI();
+        renderEverything();
+        if (currentProfile) openProfileModal(currentProfile.username);
+      };
+    }
+
+    function escape(str) {
+      return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+  </script>
+</body>
+</html>
